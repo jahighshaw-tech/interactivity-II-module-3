@@ -17,20 +17,13 @@ let poem = [
 
 let lineIndex = 0;
 let activeLines = [];
-let btn;
 
-// 🌙 evolving button text
-let buttonTexts = [
-  "invade me",
-  "touch me",
-  "just click",
-  "divulge yourself",
-  "take from me",
-  "take more",
-  "assume my purpose",
-  "don't stop",
-  "take the rest"
-];
+// 🌙 clickable images instead of button
+let buttonImages = [];
+let currentImageIndex = 0;
+let buttonX, buttonY;
+let buttonWidth = 100; // adjust size as needed
+let buttonHeight = 100;
 
 // ⭐ stars
 let stars = [];
@@ -39,6 +32,17 @@ let starCount = 400;
 // 🌫 particles
 let particles = [];
 let particleCount = 800;
+
+// 📸 preload images - space/astronomy themed
+function preload() {
+  // Eyeball as first image
+  buttonImages.push(loadImage('https://picsum.photos/100/100?random=eye'));
+  buttonImages.push(loadImage('https://picsum.photos/100/100?random=1'));
+  buttonImages.push(loadImage('https://picsum.photos/100/100?random=2'));
+  buttonImages.push(loadImage('https://picsum.photos/100/100?random=3'));
+  buttonImages.push(loadImage('https://picsum.photos/100/100?random=4'));
+  buttonImages.push(loadImage('https://picsum.photos/100/100?random=5'));
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -51,39 +55,18 @@ function setup() {
   createElement("style", `
     body {
       margin: 0;
+      padding: 0;
       overflow: hidden;
       font-family: "EB Garamond", serif;
     }
 
-    button {
-      font-family: "Helvetica Neue", sans-serif;
-      letter-spacing: 1px;
-      font-size: 13px;
-
-      background: rgba(255,255,255,0.05);
-      color: white;
-      border: 1px solid rgba(255,255,255,0.2);
-      padding: 10px 18px;
-      border-radius: 20px;
-      backdrop-filter: blur(6px);
-      cursor: pointer;
-
-      box-shadow:
-        0 0 10px rgba(255,255,255,0.2),
-        0 0 25px rgba(200,150,255,0.15);
-
-      transition: all 0.25s ease;
-
-      /* 🌫 breathing */
-      animation: breathe 4s ease-in-out infinite;
+    canvas {
+      display: block;
+      width: 100px;
+      height: 100px;
     }
 
-    button:hover {
-      transform: scale(1.05);
-      box-shadow:
-        0 0 16px rgba(255,255,255,0.35),
-        0 0 30px rgba(180,120,255,0.25);
-    }
+    /* 🌙 Poem and animation styles */
 
     .poemLine {
       color: white;
@@ -156,13 +139,20 @@ function setup() {
     });
   }
 
-  btn = createPoemButton(width / 2, height - 60);
+  // Image position
+  buttonX = width / 2 - buttonWidth / 2;
+  buttonY = height - 100;
 }
 
 function draw() {
   drawGradientSky();
   drawStars();
   drawParticles();
+
+  // Draw the clickable image
+  if (buttonImages.length > 0) {
+    image(buttonImages[currentImageIndex], buttonX, buttonY, buttonWidth, buttonHeight);
+  }
 
   for (let l of activeLines) {
     l.x += l.dx;
@@ -221,36 +211,6 @@ function drawParticles() {
   }
 }
 
-function createPoemButton(x, y) {
-  let b = createButton("invade me");
-  constrainButton(b, x, y);
-
-  b.mousePressed(() => {
-    if (random() < 0.35) return;
-
-    revealLine();
-
-    // 🌙 change text
-    b.html(random(buttonTexts));
-
-    // ⚡ glitch
-    b.addClass("glitch");
-    setTimeout(() => b.removeClass("glitch"), 150);
-  });
-
-  return b;
-}
-
-function constrainButton(b, x, y) {
-  let bw = b.size().width;
-  let bh = b.size().height;
-
-  let bx = constrain(x - bw / 2, 20, width - bw - 20);
-  let by = constrain(y - bh / 2, 20, height - bh - 20);
-
-  b.position(bx, by);
-}
-
 function revealLine() {
   if (lineIndex >= poem.length) {
     showEndMessage();
@@ -287,4 +247,43 @@ function showEndMessage() {
   let end = createDiv("…Written by Chen Chen…");
   end.class("poemLine");
   end.position(width / 2 - 100, height / 2);
+}
+
+// 🖱 Handle clicks on the image
+function mousePressed() {
+  // Check if click is within image bounds
+  if (mouseX > buttonX && mouseX < buttonX + buttonWidth &&
+      mouseY > buttonY && mouseY < buttonY + buttonHeight) {
+    
+    if (random() < 0.35) return; // same random skip as original button
+    
+    revealLine();
+    
+    // Change to next image
+    currentImageIndex = (currentImageIndex + 1) % buttonImages.length;
+    
+    // Optional: add animation/glitch effect here
+    console.log("Image changed to index: " + currentImageIndex);
+  }
+}
+
+function typeLine(div, text) {
+  let i = 0;
+  let typer = setInterval(() => {
+    div.html(text.substring(0, i));
+    i++;
+    if (i > text.length) clearInterval(typer);
+  }, 35);
+}
+
+function showEndMessage() {
+  let end = createDiv("…Written by Chen Chen…");
+  end.class("poemLine");
+  end.position(width / 2 - 100, height / 2);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+  buttonX = width / 2 - buttonWidth / 2;
+  buttonY = height - 100;
 }
