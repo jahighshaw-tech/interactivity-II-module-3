@@ -35,9 +35,9 @@ let particleCount = 800;
 
 // 📸 preload images - space/astronomy themed
 function preload() {
-  // Eyeball as first image
-  buttonImages.push(loadImage('https://picsum.photos/100/100?random=eye'));
-  buttonImages.push(loadImage('https://picsum.photos/100/100?random=1'));
+  // Use local image1.png for the first button image
+  buttonImages.push(loadImage('image1.png'));
+  buttonImages.push(loadImage('image2.png'));
   buttonImages.push(loadImage('https://picsum.photos/100/100?random=2'));
   buttonImages.push(loadImage('https://picsum.photos/100/100?random=3'));
   buttonImages.push(loadImage('https://picsum.photos/100/100?random=4'));
