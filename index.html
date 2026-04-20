@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Loading</title>
+  <title>Index</title>
   <style>
     * {
       margin: 0;
@@ -11,54 +11,24 @@
       box-sizing: border-box;
     }
 
-    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500&display=swap');
-
     body {
       width: 100vw;
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "EB Garamond", serif;
-      overflow: hidden;
-      background: linear-gradient(to bottom, #0a0000, #150000);
+      font-family: Arial, sans-serif;
+      background: white;
     }
 
     .loading-btn {
-      font-family: "EB Garamond", serif;
-      font-size: 12px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      padding: 8px 16px;
-      border-radius: 0px;
-      backdrop-filter: blur(6px);
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      color: black;
+      background: white;
+      border: 1px solid black;
+      padding: 10px 20px;
       cursor: pointer;
-      box-shadow:
-        0 0 10px rgba(255, 255, 255, 0.2),
-        0 0 25px rgba(200, 150, 255, 0.15);
-      transition: all 0.3s ease;
-      animation: breathe 4s ease-in-out infinite;
-    }
-
-    .loading-btn:hover {
-      transform: scale(1.05);
-      box-shadow:
-        0 0 16px rgba(255, 255, 255, 0.35),
-        0 0 30px rgba(180, 120, 255, 0.25);
-    }
-
-    @keyframes breathe {
-      0%, 100% {
-        transform: scale(1);
-        opacity: 0.9;
-      }
-      50% {
-        transform: scale(1.06);
-        opacity: 1;
-      }
     }
   </style>
 </head>
