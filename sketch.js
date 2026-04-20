@@ -27,9 +27,9 @@ let buttonHeight = 100;
 function preload() {
   buttonImages.push(loadImage('image1.png'));
   buttonImages.push(loadImage('image2.png'));
-  buttonImages.push(loadImage('https://picsum.photos/100/100?random=2'));
-  buttonImages.push(loadImage('https://picsum.photos/100/100?random=3'));
-  buttonImages.push(loadImage('https://picsum.photos/100/100?random=4'));
+  buttonImages.push(loadImage('image3.png'));
+  buttonImages.push(loadImage('image4.png'));
+  buttonImages.push(loadImage('image5.png'));
   buttonImages.push(loadImage('https://picsum.photos/100/100?random=5'));
 }
 
