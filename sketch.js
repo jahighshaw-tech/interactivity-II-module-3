@@ -20,18 +20,51 @@ let activeLines = [];
 
 let buttonImages = [];
 let currentImageIndex = 0;
+
 let buttonX, buttonY;
-let buttonWidth = 100;
-let buttonHeight = 100;
+let buttonSize = 100;
+
+let finalImage;
+let sequenceComplete = false;
+let clickableIcon;
+
+let stars = [];
+let starMode = false;
+let starStartTime = 0;
+let STAR_DURATION = 6000;
+
+let starBurst = false;
+
+/* FINAL HEARTBEAT */
+let heartbeat = false;
+
+/* ---------------- LOAD SAFE ---------------- */
+
+function safeLoad(path) {
+  return loadImage(path,
+    () => {},
+    () => console.warn("missing:", path)
+  );
+}
+
+/* ---------------- PRELOAD ---------------- */
 
 function preload() {
-  buttonImages.push(loadImage('image1.png'));
-  buttonImages.push(loadImage('image2.png'));
-  buttonImages.push(loadImage('image3.png'));
-  buttonImages.push(loadImage('image4.png'));
-  buttonImages.push(loadImage('image5.png'));
-  buttonImages.push(loadImage('https://picsum.photos/100/100?random=5'));
+  let files = [
+    "image1.jpg","image2.png","image3.png","image4.png","image5.png",
+    "image6.png","image8.png","image9.png","image10.jpg","image11.jpg",
+    "image12.png","image13.png","image14.jpg","image15.jpg","image16.png"
+  ];
+
+  for (let f of files) {
+    buttonImages.push(safeLoad(f));
+  }
+
+  finalImage = safeLoad("final.jpg");
+  clickableIcon = safeLoad("endless.png");
 }
+
+/* ---------------- SETUP ---------------- */
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -39,110 +72,185 @@ function setup() {
   createElement("style", `
     body {
       margin: 0;
-      padding: 0;
       overflow: hidden;
-      font-family: Arial, sans-serif;
-      background-color: white;
-    }
-
-    canvas {
-      display: block;
-      width: 100px;
-      height: 100px;
-      background-color: white;
+      font-family: Arial;
+      background: rgb(245, 238, 225);
     }
 
     .poemLine {
-      color: black;
+      position: absolute;
       font-size: 18px;
       max-width: 280px;
-      line-height: 1.5;
-      letter-spacing: 0px;
-      font-family: Arial, sans-serif;
       pointer-events: none;
+      color: black;
     }
   `);
 
-  buttonX = width / 2 - buttonWidth / 2;
-  buttonY = height - 100;
+  buttonX = width / 2;
+  buttonY = height - 120;
+
+  initStars();
 }
 
-function draw() {
-  background(255);
+/* ---------------- STARS ---------------- */
 
-  if (buttonImages.length > 0) {
-    image(buttonImages[currentImageIndex], buttonX, buttonY, buttonWidth, buttonHeight);
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 350; i++) {
+    stars.push({
+      x: random(width),
+      y: random(height),
+      r: random(1, 2.5),
+      tw: random(TWO_PI),
+      vx: random(-0.5, 0.5),
+      vy: random(-0.5, 0.5)
+    });
+  }
+}
+
+/* ---------------- DRAW ---------------- */
+
+function draw() {
+
+  /* STAR MODE */
+  if (starMode) {
+    background(0);
+
+    let elapsed = millis() - starStartTime;
+
+    /* AUTO EXIT AFTER 6 SECONDS */
+    if (elapsed > STAR_DURATION) {
+      starMode = false;
+      starBurst = false;
+    }
+
+    /* IMAGE 6 BURST */
+    if (starBurst) {
+      for (let s of stars) {
+        s.x += random(-6, 6);
+        s.y += random(-6, 6);
+      }
+      if (elapsed > 900) starBurst = false;
+    }
+
+    noStroke();
+    fill(255);
+
+    for (let s of stars) {
+      let tw = sin(frameCount * 0.05 + s.tw) * 1.5;
+      circle(s.x, s.y, s.r + tw);
+    }
+
+  } else {
+    background(245, 238, 225);
   }
 
+  /* MAIN IMAGE FLOW */
+  if (sequenceComplete) {
+
+    image(finalImage, 0, 0, width, height);
+
+    drawHeartbeatIcon();
+
+  } else {
+
+    let img = buttonImages[currentImageIndex];
+
+    if (img) {
+      image(img, buttonX, buttonY, buttonSize, buttonSize);
+    }
+  }
+
+  /* POEM FLOATING */
   for (let l of activeLines) {
     l.x += l.dx;
     l.y += l.dy;
-
-    let d = dist(mouseX, mouseY, l.x, l.y);
-    if (d < 120) {
-      let angle = atan2(l.y - mouseY, l.x - mouseX);
-      l.x += cos(angle) * 1.5;
-      l.y += sin(angle) * 1.5;
-    }
-
-    l.div.position(l.x, l.y);
+    if (l.div) l.div.position(l.x, l.y);
   }
 }
 
-function revealLine() {
-  if (lineIndex >= poem.length) {
-    showEndMessage();
-    return;
+/* ---------------- HEARTBEAT ---------------- */
+
+function drawHeartbeatIcon() {
+  let scale = 1;
+
+  if (heartbeat) {
+    let t = frameCount % 60;
+    scale = (t < 10 || (t > 20 && t < 30)) ? 1.3 : 1;
   }
 
-  let div = createDiv("");
+  let w = 120 * scale;
+  let h = 80 * scale;
+
+  image(clickableIcon, width - 200, 100, w, h);
+}
+
+/* ---------------- POEM ---------------- */
+
+function revealLine() {
+  if (lineIndex >= poem.length) return;
+
+  let text = poem[lineIndex];
+
+// override floating behavior text
+if (text.includes("constellations")) {
+  text = "I am endless, but never full";
+}
+
+  let div = createDiv(text);
   div.class("poemLine");
 
-  let x = random(100, width - 300);
-  let y = random(100, height - 100);
-  div.position(x, y);
+  div.position(random(100, width - 300), random(100, height - 200));
 
-  typeLine(div, poem[lineIndex]);
+  activeLines.push({
+    div,
+    x: random(width),
+    y: random(height),
+    dx: random(-0.3, 0.3),
+    dy: random(-0.3, 0.3)
+  });
 
-  let dx = random(-0.3, 0.3);
-  let dy = random(-0.3, 0.3);
-
-  activeLines.push({ div, x, y, dx, dy });
+  if (text.includes("constellations")) {
+    starMode = true;
+    starStartTime = millis();
+  }
 
   lineIndex++;
 }
 
-function typeLine(div, text) {
-  let i = 0;
-  let typer = setInterval(() => {
-    div.html(text.substring(0, i));
-    i++;
-    if (i > text.length) clearInterval(typer);
-  }, 35);
-}
-
-function showEndMessage() {
-  let end = createDiv("…Written by Chen Chen…");
-  end.class("poemLine");
-  end.position(width / 2 - 100, height / 2);
-}
+/* ---------------- CLICK ---------------- */
 
 function mousePressed() {
-  if (mouseX > buttonX && mouseX < buttonX + buttonWidth &&
-      mouseY > buttonY && mouseY < buttonY + buttonHeight) {
-    
-    if (random() < 0.35) return;
-    
+
+  if (
+    mouseX > buttonX &&
+    mouseX < buttonX + buttonSize &&
+    mouseY > buttonY &&
+    mouseY < buttonY + buttonSize
+  ) {
+
     revealLine();
-    currentImageIndex = (currentImageIndex + 1) % buttonImages.length;
-    
-    buttonX = random(50, width - buttonWidth - 50);
-    buttonY = random(50, height - buttonHeight - 50);
+
+    currentImageIndex++;
+
+    /* IMAGE 6 STAR RUPTURE */
+    if (currentImageIndex === 5) {
+      starMode = true;
+      starStartTime = millis();
+      starBurst = true;
+    }
+
+    /* FINAL SEQUENCE */
+    if (currentImageIndex >= buttonImages.length) {
+      sequenceComplete = true;
+      heartbeat = true;   // 🔥 THIS FIXES YOUR MISSING HEARTBEAT
+    }
+
+    buttonX = random(50, width - 150);
+    buttonY = random(50, height - 150);
   }
 }
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  buttonX = width / 2 - buttonWidth / 2;
-  buttonY = height - 100;
 }
