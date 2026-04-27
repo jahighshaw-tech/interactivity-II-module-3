@@ -15,19 +15,13 @@ let poem = [
   "is burning.",
 ];
 
+let titleWords = ["a", "queer", "translates", "the", "night", "sky", "by", "ChenChen"];
+
 let bgAudio;
 let audioStarted = false;
 
-/* 🫀 HEARTBEAT AUDIO */
-let heartbeatAudio;
-let heartbeatStarted = false;
-
 let lineIndex = 0;
 let activeLines = [];
-
-let endlessMode = false;
-let savedLines = [];
-let savedIndex = 0;
 
 let buttonImages = [];
 let currentImageIndex = 0;
@@ -44,22 +38,11 @@ let starMode = false;
 let starStartTime = 0;
 let STAR_DURATION = 6000;
 
-let starBurst = false;
-
-/* ICON */
 let iconX, iconY;
 
-/* IMAGE BOUNDS */
 let imgX = 0;
 let imgY = 0;
 let imgW, imgH;
-
-/* 🦋 BUTTERFLIES */
-let butterflies = [];
-let butterfliesActive = false;
-let butterflyImgs = [];
-
-/* ---------------- LOAD SAFE ---------------- */
 
 function safeLoad(path) {
   return loadImage(
@@ -68,8 +51,6 @@ function safeLoad(path) {
     () => console.warn("missing:", path)
   );
 }
-
-/* ---------------- PRELOAD ---------------- */
 
 function preload() {
   let files = [
@@ -83,22 +64,12 @@ function preload() {
   finalImage = safeLoad("final.jpg");
   clickableIcon = safeLoad("endless.png");
 
-  butterflyImgs = [
-    safeLoad("butterfly1.png"),
-    safeLoad("butterfly2.png"),
-    safeLoad("butterfly3.png")
-  ];
-
   bgAudio = loadSound("audio.wav");
-  heartbeatAudio = loadSound("heartbeat.wav");
 }
-
-/* ---------------- SETUP ---------------- */
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
   document.body.style.overflow = "hidden";
-  document.documentElement.style.overflow = "hidden";
 
   buttonX = width / 2;
   buttonY = height - 120;
@@ -108,8 +79,6 @@ function setup() {
 
   initStars();
 }
-
-/* ---------------- STARS ---------------- */
 
 function initStars() {
   stars = [];
@@ -123,33 +92,14 @@ function initStars() {
   }
 }
 
-/* ---------------- BUTTERFLIES ---------------- */
-
-function spawnButterflies() {
-  butterfliesActive = true;
-  butterflies = [];
-
-  for (let i = 0; i < 18; i++) {
-    butterflies.push({
-      angle: random(TWO_PI),
-      radius: random(30, 140),
-      speed: random(0.01, 0.03),
-      offsetX: random(-500, 70),
-      offsetY: random(-300, 30),
-      img: random(butterflyImgs),
-      size: random(10, 45)
-    });
-  }
-}
-
-/* ---------------- DRAW ---------------- */
-
 function draw() {
-  background(starMode ? 0 : color(245, 238, 225));
-
   if (starMode) {
+    background(0);
+
     let elapsed = millis() - starStartTime;
-    if (elapsed > STAR_DURATION) starMode = false;
+    if (elapsed > STAR_DURATION) {
+      starMode = false;
+    }
 
     noStroke();
     fill(255);
@@ -158,17 +108,20 @@ function draw() {
       let tw = sin(frameCount * 0.05 + s.tw) * 1.5;
       circle(s.x, s.y, s.r + tw);
     }
+
+  } else {
+    background(245, 238, 225);
   }
 
   if (sequenceComplete) {
     image(finalImage, imgX, imgY, imgW, imgH);
     drawHeartbeatIcon();
   } else {
-    let img = buttonImages[currentImageIndex];
-    if (img) image(img, buttonX, buttonY, buttonSize, buttonSize);
-
     let buttonSizeOptions = [60, 100, 140, 180];
     buttonSize = buttonSizeOptions[currentImageIndex % buttonSizeOptions.length];
+
+    let img = buttonImages[currentImageIndex];
+    if (img) image(img, buttonX, buttonY, buttonSize, buttonSize);
   }
 
   for (let l of activeLines) {
@@ -177,42 +130,33 @@ function draw() {
     if (l.div) l.div.position(l.x, l.y);
   }
 
-  if (butterfliesActive) {
-    let cx = width / 2;
-    let cy = height / 2;
-
-    for (let b of butterflies) {
-      b.angle += b.speed;
-
-      let x = cx + cos(b.angle) * b.radius + b.offsetX;
-      let y = cy + sin(b.angle) * b.radius + b.offsetY;
-
-      image(b.img, x, y, b.size, b.size);
-    }
+  if (!sequenceComplete) {
+    drawTitle();
   }
 }
 
-/* ---------------- HEART ICON ---------------- */
+function drawTitle() {
+  let idx = floor(frameCount / 40) % titleWords.length;
+  let t = titleWords[idx];
 
-function drawHeartbeatIcon() {
-  let scale = sin(frameCount * 0.2) * 0.15 + 1.1;
+  let flicker = map(sin(frameCount * 0.2), -1, 1, 80, 200);
 
-  let w = 420 * scale;
-  let h = 300 * scale;
-
-  let anchorX = 0.58;
-  let anchorY = 0.2;
-
-  iconX = imgX + imgW * anchorX;
-  iconY = imgY + imgH * anchorY;
-
-  image(clickableIcon, iconX, iconY, w, h);
+  textAlign(CENTER, CENTER);
+  textSize(42);
+  fill(0, flicker);
+  text(t, width / 2, height / 3);
 }
 
-/* ---------------- CLICK ---------------- */
+function drawHeartbeatIcon() {
+  if (!clickableIcon) return;
+
+  iconX = width / 2 - 40;
+  iconY = height / 2 - 40;
+
+  image(clickableIcon, iconX, iconY, 80, 80);
+}
 
 function mousePressed() {
-
   if (!audioStarted) {
     userStartAudio();
     bgAudio.loop();
@@ -220,69 +164,7 @@ function mousePressed() {
     audioStarted = true;
   }
 
-  if (sequenceComplete) {
-
-    let t = frameCount % 60;
-    let scale = (t < 10 || (t > 20 && t < 30)) ? 1.3 : 1;
-
-    let w = 420 * scale;
-    let h = 300 * scale;
-
-    if (
-      mouseX > iconX &&
-      mouseX < iconX + w &&
-      mouseY > iconY &&
-      mouseY < iconY + h
-    ) {
-
-      if (!endlessMode) {
-
-        savedLines = activeLines;
-        savedIndex = lineIndex;
-
-        for (let l of activeLines) if (l.div) l.div.remove();
-        activeLines = [];
-
-        let endlessDiv = createDiv("I am endless, but never full");
-        endlessDiv.class("poemLine");
-        endlessDiv.position(width / 2 - 140, height / 2 - 20);
-
-        activeLines.push({
-          div: endlessDiv,
-          x: width / 2 - 140,
-          y: height / 2 - 20,
-          dx: 0,
-          dy: 0
-        });
-
-        spawnButterflies();
-        endlessMode = true;
-
-        if (!heartbeatStarted) {
-          heartbeatAudio.loop();
-          heartbeatAudio.setVolume(5);
-          heartbeatStarted = true;
-        }
-
-      } else {
-
-        for (let l of activeLines) if (l.div) l.div.remove();
-
-        activeLines = [];
-        butterfliesActive = false;
-        butterflies = [];
-
-        lineIndex = savedIndex;
-
-        heartbeatAudio.stop();
-        heartbeatStarted = false;
-
-        endlessMode = false;
-      }
-
-      return;
-    }
-  }
+  if (sequenceComplete) return;
 
   if (
     mouseX > buttonX &&
@@ -290,7 +172,6 @@ function mousePressed() {
     mouseY > buttonY &&
     mouseY < buttonY + buttonSize
   ) {
-
     if (lineIndex < poem.length) revealLine();
     currentImageIndex++;
 
@@ -308,21 +189,21 @@ function mousePressed() {
   }
 }
 
-/* ---------------- POEM ---------------- */
-
 function revealLine() {
   let text = poem[lineIndex];
   if (!text) return;
 
+  let x = random(100, width - 300);
+  let y = random(100, height - 200);
+
   let div = createDiv(text);
   div.class("poemLine");
-
-  div.position(random(100, width - 300), random(100, height - 200));
+  div.position(x, y);
 
   activeLines.push({
     div,
-    x: random(width),
-    y: random(height),
+    x,
+    y,
     dx: random(-0.3, 0.3),
     dy: random(-0.3, 0.3)
   });
