@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+</head>
+
+<body>
+<script>
+
+
+
+let lungsImg;
+let finalImage, heartbeatImg, butterflyImg, heartbeatSound;
+
+let butterflies = [];
+let butterfliesActive = false;
+
+let ribZone;
+
+let heartX, heartY, heartW = 140, heartH = 140;
+
+// 🫁 LUNGS BUTTON STATE
+let lungsX, lungsY, lungsW, lungsH;
+let lungsActivated = false;
+
+let beat = 1;
+let beatDir = 1;
+
+let pulse = 1.05;
+let targetPulse = 1;
+
+let spawnTextIndex = 0;
+
+let spawnTimer = 0;
+let spawnDelay = 200;
+let spawnCount = 0;
+
+let activated = false;
+
+let collectedTexts = [];
+let floatingTexts = [];
+
+let butterflyTexts = [
+  "Being queer is not just one experience",
+  "But a spectrum of feelings and identities",
+  "whatever is real to me",
+  "does not combat your truth",
+  "so hold me softly",
+  "subliminaly",
+  "endlessly."
+];
+
+function preload() {
+  finalImage = loadImage("images/final.jpg");
+  heartbeatImg = loadImage("images/endless.png");
+  butterflyImg = loadImage("images/butterflyImg.png");
+  lungsImg = loadImage("images/lungs.png");
+
+  soundFormats('mp3');
+  heartbeatSound = loadSound(
+    "heartbeat.mp3",
+    () => console.log("heartbeat loaded"),
+    (err) => console.log("sound error:", err)
+  );
+}
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  function setup() {
+  createCanvas(windowWidth, windowHeight);
+
+ 
+}
+}
+
+function playHeartbeatFromButterfly() {
+  if (!heartbeatSound) return;
+
+  if (!heartbeatSound.isLoaded()) {
+    console.log("sound still loading...");
+    return;
+  }
+
+  heartbeatSound.stop();   // restart clean each click
+  heartbeatSound.setVolume(0.5);
+  heartbeatSound.play();    // or loop() if you want it continuous
+}
+
+function draw() {
+  background(0);
+
+  ribZone = {
+    x: width * 0.30,
+    y: height * 0.25,
+    w: width * 0.44,
+    h: height * 0.32
+  };
+
+  // 🦋 spawn system
+  if (butterfliesActive && spawnCount < 15) {
+    if (millis() - spawnTimer > spawnDelay) {
+      butterflies.push(makeButterfly());
+      spawnCount++;
+      spawnTimer = millis();
+    }
+  }
+
+  if (finalImage) {
+    image(finalImage, 0, 0, width, height);
+  }
+
+ 
+//  LUNGS BUTTON (calm breathing version)
+if (lungsImg) {
+
+  // gentle breathing ONLY (no chaos scaling)
+  let lungBeat = 2 + (beat - 1) * 0.45; // 🔥 reduces intensity a lot
+
+  lungsW = ribZone.w * 0.50 * lungBeat;
+  lungsH = ribZone.h * 0.50 * lungBeat;
+
+  // perfectly centered in ribcage
+  lungsX = ribZone.x + ribZone.w / 2;
+  lungsY = ribZone.y + ribZone.h / 5;
+
+  imageMode(CENTER); // 🔥 makes positioning stable
+
+  image(
+    lungsImg,
+    lungsX,
+    lungsY,
+    lungsW,
+    lungsH
+  );
+
+  imageMode(CORNER); // reset so butterflies don't break
+}
+
+  // 🫀 HEARTBEAT
+  pulse = lerp(pulse, targetPulse, 0.12);
+
+  if (activated) {
+    beat += 0.013 * beatDir;
+    if (beat > 1.35) beatDir = -1;
+    if (beat < 1.0) beatDir = 1;
+  } else {
+    beat = lerp(beat, 1.5, .0895);
+  }
+
+  heartX = width * .30;
+  heartY = height * 0.22;
+
+  if (heartbeatImg) {
+    let pw = heartW * beat;
+    let ph = heartH * beat;
+
+    image(
+      heartbeatImg,
+      heartX - (pw - heartW) / 9,
+      heartY - (ph - heartH) / 2,
+      pw,
+      ph
+    );
+  }
+
+  // 🦋 butterflies
+  for (let b of butterflies) {
+
+    if (b.x < ribZone.x || b.x > ribZone.x + ribZone.w) b.vx *= -1;
+    if (b.y < ribZone.y || b.y > ribZone.y + ribZone.h) b.vy *= -1;
+
+    b.x += b.vx;
+    b.y += b.vy;
+
+    if (butterflyImg) {
+      image(butterflyImg, b.x, b.y, b.size, b.size);
+    }
+  }
+
+  // ✨ floating text
+  textAlign(CENTER, CENTER);
+  textSize(24);
+
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    let t = floatingTexts[i];
+
+    fill(255, t.alpha);
+    text(t.text, t.x, t.y);
+
+    t.y -= 0.6;
+    t.alpha -= 3;
+
+    if (t.alpha <= 0) {
+      floatingTexts.splice(i, 1);
+    }
+  }
+}
+
+function mousePressed() {
+
+  
+  // 🫀 HEART HIT
+  let w = heartW * beat;
+  let h = heartH * beat;
+
+  let x = heartX - (w - heartW) / 2;
+  let y = heartY - (h - heartH) / 2;
+
+  let hitHeart =
+    mouseX > x &&
+    mouseX < x + w &&
+    mouseY > y &&
+    mouseY < y + h;
+
+  if (hitHeart) {
+
+    activated = true;
+
+    spawnTextIndex = 0;
+    butterflies = [];
+    spawnCount = 0;
+    spawnTimer = millis();
+    butterfliesActive = true;
+
+    if (heartbeatSound && !heartbeatSound.isPlaying()) {
+      heartbeatSound.loop();
+    }
+  
+
+    return;
+  }
+
+  // 🫁 LUNGS HIT (SMALLER CLICK RADIUS)
+if (lungsImg) {
+
+  // shrink click zone to inner “core”
+  let hitScale = 0.45; // 🔥 smaller = harder to click (try 0.35–0.6)
+
+  let cx = lungsX;
+  let cy = lungsY;
+
+  let hitW = lungsW * hitScale;
+  let hitH = lungsH * hitScale;
+
+  let hitLungs =
+    mouseX > cx - hitW / 2 &&
+    mouseX < cx + hitW / 2 &&
+    mouseY > cy - hitH / 2 &&
+    mouseY < cy + hitH / 2;
+
+  if (hitLungs) {
+
+    console.log("🫁 going back to sketch.html");
+
+    window.location.href = "sketch.html";
+
+    return;
+  }
+}
+
+  // 🦋 butterfly click
+  for (let b of butterflies) {
+    let d = dist(mouseX, mouseY, b.x, b.y);
+
+    if (d < b.size) {
+
+  let msg = b.text;
+
+  collectedTexts.push(msg);
+
+  floatingTexts.push({
+    text: msg,
+    x: width / 2,
+    y: height / 2,
+    alpha: 255
+  });
+
+  // 💥 PLAY SOUND HERE
+  playHeartbeatFromButterfly();
+
+  butterflies = butterflies.filter(bt => bt.id !== b.id);
+
+  break;
+}
+  }
+}
+
+function makeButterfly() {
+
+  let msg = butterflyTexts[spawnTextIndex];
+
+  spawnTextIndex++;
+
+  if (spawnTextIndex >= butterflyTexts.length) {
+    spawnTextIndex = butterflyTexts.length - 1;
+  }
+
+  return {
+    x: random(ribZone.x, ribZone.x + ribZone.w),
+    y: random(ribZone.y, ribZone.y + ribZone.h),
+    vx: random(-1.5, 1.5),
+    vy: random(-1.5, 1.5),
+    size: random(20, 60),
+    text: msg,
+    id: random(100000)
+  };
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+</script>
+</body>
+</html>
