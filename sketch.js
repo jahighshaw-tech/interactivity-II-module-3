@@ -44,27 +44,8 @@ let imgX = 0;
 let imgY = 0;
 let imgW, imgH;
 
-function safeLoad(path) {
-  return loadImage(
-    path,
-    () => {},
-    () => console.warn("missing:", path)
-  );
-}
-
 function preload() {
-  let files = [
-    "image1.jpg","image2.png","image3.png","image4.png","image5.png",
-    "image6.png","image8.png","image9.png","image10.jpg","image11.jpg",
-    "image12.png","image13.png","image14.jpg","image15.jpg","image16.png"
-  ];
-
-  for (let f of files) buttonImages.push(safeLoad(f));
-
-  finalImage = safeLoad("final.jpg");
-  clickableIcon = safeLoad("endless.png");
-
-  bgAudio = loadSound("audio.wav");
+  // Intentionally empty to prevent blocking load
 }
 
 function setup() {
@@ -78,6 +59,24 @@ function setup() {
   imgH = height;
 
   initStars();
+  loadAssets(); // load everything in background
+}
+
+function loadAssets() {
+  let files = [
+    "image1.jpg","image2.png","image3.png","image4.png","image5.png",
+    "image6.png","image8.png","image9.png","image10.jpg","image11.jpg",
+    "image12.png","image13.png","image14.jpg","image15.jpg","image16.png"
+  ];
+
+  for (let f of files) {
+    loadImage(f, img => {
+      buttonImages.push(img);
+    }, () => console.warn("missing:", f));
+  }
+
+  loadImage("final.jpg", img => finalImage = img);
+  loadImage("endless.png", img => clickableIcon = img);
 }
 
 function initStars() {
@@ -114,14 +113,18 @@ function draw() {
   }
 
   if (sequenceComplete) {
-    image(finalImage, imgX, imgY, imgW, imgH);
+    if (finalImage) {
+      image(finalImage, imgX, imgY, imgW, imgH);
+    }
     drawHeartbeatIcon();
   } else {
     let buttonSizeOptions = [60, 100, 140, 180];
     buttonSize = buttonSizeOptions[currentImageIndex % buttonSizeOptions.length];
 
     let img = buttonImages[currentImageIndex];
-    if (img) image(img, buttonX, buttonY, buttonSize, buttonSize);
+    if (img) {
+      image(img, buttonX, buttonY, buttonSize, buttonSize);
+    }
   }
 
   for (let l of activeLines) {
@@ -159,8 +162,13 @@ function drawHeartbeatIcon() {
 function mousePressed() {
   if (!audioStarted) {
     userStartAudio();
-    bgAudio.loop();
-    bgAudio.setVolume(0.4);
+
+    loadSound("audio.wav", snd => {
+      bgAudio = snd;
+      bgAudio.loop();
+      bgAudio.setVolume(0.4);
+    });
+
     audioStarted = true;
   }
 
